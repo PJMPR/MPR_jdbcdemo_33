@@ -2,8 +2,14 @@ package jdbcdemo.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdbcdemo.domain.Person;
 
 public class PersonRepository {
 
@@ -15,18 +21,67 @@ public class PersonRepository {
 			+ "surname VARCHAR(50)"
 			+ ")";
 	
-	Statement createTable;
+	String insertSql ="INSERT INTO person(name, surname) "
+			+ "VALUES(?,?)";
+	String selectAllSql = "SELECT * FROM person";
+	
+	PreparedStatement insert;
+	PreparedStatement seleactAll;
+	
 	
 	public PersonRepository(){
 		
 		try {
 			connection = DriverManager.getConnection("jdbc:hsqldb:hsql://localhost/workdb");
-			createTable = connection.createStatement();
-			createTable.executeUpdate(createTableSql);
+			insert = connection.prepareStatement(insertSql);
+			seleactAll = connection.prepareStatement(selectAllSql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public List<Person> getAll(){
+		List<Person> result = new ArrayList<Person>();
+		
+		try {
+			ResultSet rs = seleactAll.executeQuery();
+			
+			while(rs.next()){
+				Person p = new Person();
+				p.setName(rs.getString("name"));
+				p.setSurname(rs.getString("surname"));
+				p.setId(rs.getInt("id"));
+				result.add(p);
+			}
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
+		
+		return result;
+	}
+	
+	
+	public void add(Person person){
+		
+		try {
+			insert.setString(1, person.getName());
+			insert.setString(2, person.getSurname());
+			insert.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	public void createTable(){
+		try {
+			Statement createTable=connection.createStatement();
+			createTable.executeUpdate(createTableSql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }
